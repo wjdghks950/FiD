@@ -12,6 +12,7 @@ import numpy as np
 from pathlib import Path
 from torch.utils.data import DataLoader, RandomSampler, DistributedSampler, SequentialSampler
 from src.options import Options
+from tqdm import tqdm
 
 import src.slurm
 import src.util
@@ -45,7 +46,7 @@ def train(model, optimizer, scheduler, step, train_dataset, eval_dataset, opt, c
     model.train()
     while step < opt.total_steps:
         epoch += 1
-        for i, batch in enumerate(train_dataloader):
+        for i, batch in tqdm(enumerate(train_dataloader), desc="Training FiD Reader", total=len(train_dataloader)):
             step += 1
             (idx, labels, _, context_ids, context_mask) = batch
 
@@ -104,7 +105,7 @@ def evaluate(model, dataset, tokenizer, collator, opt):
     exactmatch = []
     model = model.module if hasattr(model, "module") else model
     with torch.no_grad():
-        for i, batch in enumerate(dataloader):
+        for i, batch in tqdm(enumerate(dataloader), desc="Evaluate FiD Reader", total=len(dataloader)):
             (idx, _, _, context_ids, context_mask) = batch
 
             outputs = model.generate(
