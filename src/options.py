@@ -73,7 +73,7 @@ class Options():
         self.parser.add_argument('--model_path', type=str, default='none', help='path for retraining')
 
         # dataset parameters
-        self.parser.add_argument("--per_gpu_batch_size", default=1, type=int, 
+        self.parser.add_argument("--per_gpu_batch_size", default=1, type=int,
                         help="Batch size per GPU/CPU for training.")
         self.parser.add_argument('--maxload', type=int, default=-1)
 
