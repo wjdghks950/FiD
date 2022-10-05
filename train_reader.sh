@@ -1,0 +1,11 @@
+python train_reader.py \
+        --train_data open_domain_data/NQ/train.json \
+        --eval_data open_domain_data/NQ/eval.json \
+        --model_size base \
+        --per_gpu_batch_size 1 \
+        --n_context 50 \
+	--total_steps 200000 \
+	--accumulation_steps 64 \
+	--eval_freq 50000
+        --name nq_base_50_200k \
+        --checkpoint_dir checkpoint \
