@@ -13,15 +13,25 @@ class Dataset(torch.utils.data.Dataset):
     def __init__(self,
                  data,
                  n_context=None,
+                 config=None,
                  question_prefix='question:',
                  title_prefix='title:',
-                 passage_prefix='context:'):
+                 passage_prefix='context:',
+                 triple_prefix='triple:'):
         self.data = data
         self.n_context = n_context
+        self.config = config
         self.question_prefix = question_prefix
         self.title_prefix = title_prefix
         self.passage_prefix = passage_prefix
+        self.triple_prefix = triple_prefix
         self.sort_data()
+        # print("data[sample]:\n", data[0].keys())
+        # print("data[question]: ", data[0]['question'])
+        # print("data[ctxs]: ", data[0]['ctxs'][:2])
+        # print("data[Q_triples_text]: ", len(data[0]['Q_triples_text']))
+        # print("\ndata[C_triples_text_all]: ", len(data[0]['C_triples_text_all']))
+        # exit()
 
     def __len__(self):
         return len(self.data)
@@ -41,18 +51,23 @@ class Dataset(torch.utils.data.Dataset):
         target = self.get_target(example)
 
         if 'ctxs' in example and self.n_context is not None:
-            f = self.title_prefix + " {} " + self.passage_prefix + " {}"
             contexts = example['ctxs'][:self.n_context]
-            passages = [f.format(c['title'], c['text']) for c in contexts]
+            f = self.title_prefix + " {} " + self.passage_prefix + " {}"
+            if self.config.use_triple:
+                f = f + " " + self.triple_prefix + " {}"
+                passages = [f.format(c['title'], c['text'], c['C_triples_text']) if 'C_triples_text' in c \
+                            else f.format(c['title'], c['text'], "") for c in contexts]
+            else:
+                passages = [f.format(c['title'], c['text']) for c in contexts]
             scores = [float(c['score']) for c in contexts]
             scores = torch.tensor(scores)
             # TODO(egrave): do we want to keep this?
             if len(contexts) == 0:
                 contexts = [question]
+
         else:
             passages, scores = None, None
-
-
+        
         return {
             'index' : index,
             'question' : question,
@@ -70,6 +85,7 @@ class Dataset(torch.utils.data.Dataset):
     def get_example(self, index):
         return self.data[index]
 
+
 def encode_passages(batch_text_passages, tokenizer, max_length):
     passage_ids, passage_masks = [], []
     for k, text_passages in enumerate(batch_text_passages):
@@ -86,6 +102,7 @@ def encode_passages(batch_text_passages, tokenizer, max_length):
     passage_ids = torch.cat(passage_ids, dim=0)
     passage_masks = torch.cat(passage_masks, dim=0)
     return passage_ids, passage_masks.bool()
+
 
 class Collator(object):
     def __init__(self, text_maxlength, tokenizer, answer_maxlength=20):
